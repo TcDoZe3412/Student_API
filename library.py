@@ -14,6 +14,7 @@ inventory = {
     "wings of fire": 2
 }
 
+
 @app.get("/library")
 def get_library_books():
     return inventory
@@ -33,6 +34,7 @@ def get_library(bookName: str):
         "available_copies": inventory[bookName]
     }
 
+
 @app.post("/library")
 def add_book(book: BookRequest):
 
@@ -41,15 +43,15 @@ def add_book(book: BookRequest):
     else:
         inventory[book.bookName] = book.NoOfCopies
 
-
     return {
         "message": "Book added successfully",
         "bookName": book.bookName,
         "total_copies": inventory[book.bookName]
     }
 
+
 @app.post("/library_borrow")
-def borrow_book(book_name):
+def borrow_book(book_name: str):
 
     if book_name not in inventory:
         raise HTTPException(
@@ -57,8 +59,6 @@ def borrow_book(book_name):
             detail="Book not found"
         )
 
-
-   
     if inventory[book_name] <= 0:
         raise HTTPException(
             status_code=400,
@@ -71,4 +71,40 @@ def borrow_book(book_name):
         "message": "Book borrowed successfully",
         "bookName": book_name,
         "remaining_copies": inventory[book_name]
+    }
+
+
+@app.put("/library/{bookName}")
+def update_book(bookName: str, book: BookRequest):
+
+    if bookName not in inventory:
+        raise HTTPException(
+            status_code=404,
+            detail="Book not found"
+        )
+
+    inventory[bookName] += book.NoOfCopies
+
+    return {
+        "message": "Book copies updated successfully",
+        "bookName": bookName,
+        "total_copies": inventory[bookName]
+    }
+
+
+
+@app.delete("/library/{bookName}")
+def delete_book(bookName: str):
+
+    if bookName not in inventory:
+        raise HTTPException(
+            status_code=404,
+            detail="Book not found"
+        )
+
+    del inventory[bookName]
+
+    return {
+        "message": "Book and all its copies deleted successfully",
+        "bookName": bookName
     }
