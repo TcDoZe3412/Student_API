@@ -1,12 +1,11 @@
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 import csv,os
 
 
 app = FastAPI()
-
-
 
 class Student(BaseModel):
     id: int
@@ -19,6 +18,15 @@ students={
   2: {"name": "Rahul", "course": "Java"},
   3: {"name": "deepak", "course": "AgenticAi"}  
 }
+
+# For this local classroom demo.
+# here setting the rules so other threat can't interact with our data CORS POLICY MAKES US ALLOW PARTICULAR METHODS, IP'S
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["POST","DELETE","PUT"],
+    allow_headers=["Content-Type"],
+)
 
 def save_students():
     with open("students.csv", "w", newline="", encoding="utf-8") as file:
@@ -73,14 +81,20 @@ def get_student(student_id: int):
 
 @app.post("/students")
 def add_student(student: Student):
+    if student.id in students:
+        raise HTTPException(
+            status_code=400,
+            detail="Student ID already exists"
+        )
+    
     students[student.id] = {
         "name": student.name,
         "course": student.course
     }
-
+    
     save_students()
-
-    return {"id": student.id, **students[student.id]}
+    print("******I am")
+    return {"message":"Student added succesfully","Student":student}
 
 
 @app.delete("/students/{student_id}")
@@ -103,6 +117,11 @@ def delete_student(student_id: int):
 def update_student(student_id: int, student: Student):
     if student_id not in students:
         raise HTTPException(status_code=404, detail="Student not found")
-    students[student_id] = student.model_dump()
+    
+
+    students[student_id] = {
+        "name": student.name,
+        "course": student.course
+    }
     save_students()
     return student
